@@ -1,0 +1,8 @@
+{
+    "name": "Cruft Update Workflow",
+    "description": "Cruft starter workflow that checks, applies, and submits PRs for updates in cookiecutter-powered repositories.",
+    "iconName": "octicon sync",
+    "categories": ["Automation"],
+    "filePatterns": ["\\.cruft\\.json"]
+}
+
