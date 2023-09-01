@@ -1,0 +1,118 @@
+# /.github/workflows/cruft.yml
+
+name: Update repository with cruft
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  cruft:
+    permissions:
+      contents: write
+      pull-request: write
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install cruft
+        run: pip3 install cruft
+
+      - name: Check if cruft update is available
+        continue-on-error: false
+        id: check
+        run: |
+          CHANGES=0
+          if [ -f .cruft.json ]; then
+            if ! cruft check; then
+              CHANGES=1
+            fi
+          else
+            echo "No .cruft.json file"
+          fi
+
+          echo "has_changes=$CHANGES" >> "$GITHUB_OUTPUT"
+
+      - name: Store current cruft json
+        id: current-cruft
+        if: steps.check.outputs.has_changes == '1'
+        run: |
+          {
+            echo 'json<<EOF'
+            cat .cruft.json
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run cruft update if available
+        if: steps.check.outputs.has_changes == '1'
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          cruft update --skip-apply-ask --refresh-private-variables
+          git restore --staged .
+
+      - name: Store udpated cruft json
+        id: updated-cruft
+        if: steps.check.outputs.has_changes == '1'
+        run: |
+          {
+            echo 'json<<EOF'
+            cat .cruft.json
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Store cruft update info
+        id: update-info
+        if: steps.check.outputs.has_changes == '1'
+        env:
+          TEMPLATE: ${{ fromJson(steps.current-cruft.outputs.json).template }}
+          _COMMIT_HASH: ${{ fromJson(steps.current-cruft.outputs.json).commit }}
+          COMMIT_HASH: ${{ fromJson(steps.updated-cruft.outputs.json).commit }}
+        run: |
+          echo "link=$TEMPLATE" >> "$GITHUB_OUTPUT"
+          echo "name=${TEMPLATE#*//*/*/}" >> "$GITHUB_OUTPUT"
+          echo "_commit_hash=${TEMPLATE#*//*/}@${_COMMIT_HASH:0:7}" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=${TEMPLATE#*//*/}@${COMMIT_HASH:0:7}" >> "$GITHUB_OUTPUT"
+          echo "compare=${TEMPLATE}/compare/${_COMMIT_HASH:0:7}...${COMMIT_HASH:0:7}" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.check.outputs.has_changes == '1'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: .
+          commit-message: |
+            Apply ${{ steps.update-info.outputs.name }} cruft update
+
+            Apply new changes from ${{ steps.update-info.outputs._commit_hash }} to ${{ steps.update-info.outputs.commit_hash }}.
+
+            See [comparison](${{ steps.update-info.outputs.compare }}).
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          branch: cruft/update/${{ steps.update-info.outputs.commit_hash }}
+          delete-branch: true
+          title: Merge new cruft update of ${{ steps.update-info.outputs.name }}
+          body: |
+            ### Descripition
+            [Cruft](https://github.com/cruft/cruft) has detected updates from [${{ steps.update-info.outputs.name }}](${{ steps.update-info.outputs.link }}).
+
+            This PR applies new changes to the repository from ${{ steps.update-info.outputs._commit_hash }} to ${{ steps.update-info.outputs.commit_hash }}.
+
+            See [comparison](${{ steps.update-info.outputs.compare }}).
+
+            ### Additional Notes
+            There may be `*.rej` files present in this PR reflecting merge conflicts with the update. Please resolve those conflicts manually before merging.
+          labels: cookiecutter
