@@ -65,7 +65,7 @@ jobs:
           cruft update --skip-apply-ask --refresh-private-variables
           git restore --staged .
 
-      - name: Store udpated cruft json
+      - name: Store updated cruft json
         id: updated-cruft
         if: steps.check.outputs.has_changes == '1'
         run: |
