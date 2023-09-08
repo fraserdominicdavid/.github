@@ -1,0 +1,31 @@
+name: Feature Request
+description: Suggest a new feature or enhancement.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to suggest a new feature for this project.
+
+  - type: checkboxes
+    attributes:
+      label: Is there an existing feature request for this?
+      description: Please search to see if an issue already exists for the feature you want to suggest.
+      options:
+      - label: I have searched the existing issues.
+        required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Provide a brief description of the feature or enhancement you would like to suggest.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Provide any additional information on the feature request like proposed solutions, links, references, etc.

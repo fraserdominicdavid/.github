@@ -1,0 +1,49 @@
+name: Bug Report
+description: File a bug report.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to fill out this bug report.
+
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+      - label: I have searched the existing issues.
+        required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Description of the bug
+      description: Provide a brief description of what happened and what should have happened.
+      placeholder: |
+        When I do <X>, <Y> happens and I see the error message attached below:
+        ```...```
+        What I expect is <Z>
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide steps on how to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: |
+        Provide any additional information such as logs, screenshots, scenarios in which the bug occurs so that it facilitates resolving the issue.
